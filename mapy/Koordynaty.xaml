@@ -1,0 +1,43 @@
+﻿<Page
+    x:Class="mapy.Koordynaty"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:mapy"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="NAWIGATOR" FontSize="14" FontWeight="SemiBold"/>
+            <TextBlock Text="Koordynaty" FontSize="36" FontWeight="Light"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" VerticalAlignment="Top" Spacing="10">
+            <TextBlock Text="GPS: moje położenie" FontSize="24" Margin="0,50,0,5" TextAlignment="Center"/>
+            <TextBlock x:Name="tbGPS" Text="***" FontSize="20" Foreground="Red" TextAlignment="Center"/>
+            <TextBlock Text="Podaj adres celu" FontSize="24" TextAlignment="Center"/>
+            <Grid>
+                <TextBox x:Name="AdresTextBox" Text="Karmelicka 1, Gdańsk" FontSize="20" Margin="5,0,30,0" BorderThickness="1"/>
+            </Grid>
+            <StackPanel Padding="10" Margin="0,30">
+                <TextBlock Text="Wyznaczone współrzędne geograficzne:" FontWeight="Bold"/>
+                <TextBlock x:Name="tbDlugosc" Text="Długość geogr.: -"/>
+                <TextBlock x:Name="tbSzerokosc" Text="Szerokość geogr.: -"/>
+                <TextBlock x:Name="tbWynikSzukania" Foreground="White" Margin="0,10,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+        </StackPanel>
+
+        <CommandBar Grid.Row="2">
+            <AppBarButton Icon="Back" Label="Mapa" Click="powrot"/>
+            <AppBarButton Icon="Find" Label="Szukaj" Click="szukajCelu"/>
+        </CommandBar>
+    </Grid>
+</Page>

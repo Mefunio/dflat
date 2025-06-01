@@ -1,0 +1,40 @@
+﻿<Page
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:mapy"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Custom="using:Windows.UI.Xaml.Controls.Maps"
+    x:Class="mapy.MainPage"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="NAWIGATOR" Style="{ThemeResource BaseTextBlockStyle}"/>
+            <TextBlock Text="Mapa" Style="{ThemeResource HeaderTextBlockStyle}"/>
+        </StackPanel>
+
+        <Custom:MapControl x:Name="mojaMapa" Grid.Row="1"/>
+
+        
+
+        <CommandBar Grid.Row="2">
+            <AppBarButton Icon="Add" Label="Powiększ" Click="powMape"/>
+            <AppBarButton Icon="Remove" Label="Zmniejsz" Click="zmnMape"/>
+            <AppBarButton Label="Satelita" Click="trybMapy">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="S" FontFamily="auto"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarSeparator/>
+            <AppBarButton Icon="World" Label="Koordynaty" Click="nowaStrona"/>
+        </CommandBar>
+    </Grid>
+</Page>
