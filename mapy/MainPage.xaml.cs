@@ -106,10 +106,10 @@ namespace mapy
                         StrokeThickness = 3,
                         StrokeDashed = true,
                         Path = new Geopath(new List<BasicGeoposition>
-                {
-                    DaneGeograficzne.pktStartowy,
-                    DaneGeograficzne.pktDocelowy
-                })
+                        {
+                            DaneGeograficzne.pktStartowy,
+                            DaneGeograficzne.pktDocelowy
+                        })
                     };
                     mojaMapa.MapElements.Add(trasaLotem);
 
@@ -124,7 +124,6 @@ namespace mapy
 
         private async Task Trasa()
         {
-            // Sprawdź czy są dostępne punkty startowy i docelowy
             if (DaneGeograficzne.pktStartowy.Latitude == 0 || DaneGeograficzne.pktStartowy.Longitude == 0 ||
                 DaneGeograficzne.pktDocelowy.Latitude == 0 || DaneGeograficzne.pktDocelowy.Longitude == 0)
             {
@@ -132,46 +131,37 @@ namespace mapy
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine("Rozpoczynam wyznaczanie trasy...");
-
             try
             {
-                // Utwórz zapytanie o trasę
                 var routeReq = new RouteRequest()
                 {
                     BingMapsKey = DaneGeograficzne.BingKey,
                     Culture = "pl",
                     Waypoints = new List<SimpleWaypoint>
-            {
-                new SimpleWaypoint(DaneGeograficzne.pktStartowy.Latitude, DaneGeograficzne.pktStartowy.Longitude),
-                new SimpleWaypoint(DaneGeograficzne.pktDocelowy.Latitude, DaneGeograficzne.pktDocelowy.Longitude),
-            },
+                    {
+                        new SimpleWaypoint(DaneGeograficzne.pktStartowy.Latitude, DaneGeograficzne.pktStartowy.Longitude),
+                        new SimpleWaypoint(DaneGeograficzne.pktDocelowy.Latitude, DaneGeograficzne.pktDocelowy.Longitude),
+                    },
                     RouteOptions = new RouteOptions()
                     {
                         RouteAttributes = new List<RouteAttributeType> { RouteAttributeType.RoutePath }
                     }
                 };
 
-                // Wywołaj usługę wyznaczania trasy
                 var response = await ServiceManager.GetResponseAsync(routeReq);
-                System.Diagnostics.Debug.WriteLine($"Otrzymano odpowiedź: {response != null}");
 
-                // Sprawdź otrzymany wynik
                 if (response != null &&
                     response.ResourceSets != null &&
                     response.ResourceSets.Length > 0)
                 {
-                    // Rzutuj zasób na obiekt Route
                     var resource = response.ResourceSets[0].Resources[0];
                     var route = resource as Route;
 
                     if (route != null)
                     {
-                        // Pobierz informacje o trasie
                         double dystansKm = route.TravelDistance; // dystans w kilometrach
                         int czasPodrozyMin = (int)(route.TravelDuration / 60); // czas w minutach
 
-                        // Wyświetl komunikat z informacjami o trasie
                         var dialog = new Windows.UI.Popups.MessageDialog(
                             $"Dystans: {dystansKm:F2} km\n" +
                             $"Przewidywany czas podróży: {czasPodrozyMin} min ({czasPodrozyMin / 60}h {czasPodrozyMin % 60}min)",
@@ -182,11 +172,8 @@ namespace mapy
                             route.RoutePath.Line != null &&
                             route.RoutePath.Line.Coordinates != null)
                         {
-                            // Pobierz współrzędne trasy
                             double[][] path = route.RoutePath.Line.Coordinates;
-                            System.Diagnostics.Debug.WriteLine($"Znaleziono {path.Length} punktów trasy");
 
-                            // Utwórz kolekcję punktów geograficznych z współrzędnych trasy
                             var geoPath = from coordinate in path
                                           select new BasicGeoposition
                                           {
@@ -194,7 +181,6 @@ namespace mapy
                                               Longitude = coordinate[1]
                                           };
 
-                            // Zdefiniuj obiekt trasy (linia łamana na mapie)
                             var trasa = new MapPolyline
                             {
                                 Path = new Geopath(geoPath),
@@ -202,17 +188,13 @@ namespace mapy
                                 StrokeThickness = 4
                             };
 
-                            // Dodaj trasę do mapy
                             mojaMapa.MapElements.Add(trasa);
-                            System.Diagnostics.Debug.WriteLine("Trasa dodana do mapy!");
-
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Obsługa błędów (opcjonalnie można wyświetlić komunikat)
                 System.Diagnostics.Debug.WriteLine($"Błąd wyznaczania trasy: {ex.Message}");
             }
         }
