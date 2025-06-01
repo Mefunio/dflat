@@ -16,6 +16,7 @@ using Windows.UI.Xaml.Navigation;
 using Windows.Devices.Geolocation;
 using Windows.Services.Maps;
 using BingMapsRESTToolkit;
+using System.Threading.Tasks;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -59,7 +60,7 @@ namespace mapy
 
             var label = bt.Label;
 
-            if(mojaMapa.Style == Windows.UI.Xaml.Controls.Maps.MapStyle.AerialWithRoads)
+            if (mojaMapa.Style == Windows.UI.Xaml.Controls.Maps.MapStyle.AerialWithRoads)
             {
                 mojaMapa.Style = Windows.UI.Xaml.Controls.Maps.MapStyle.Road;
                 label = "Satelita";
@@ -90,7 +91,6 @@ namespace mapy
 
                 mojaMapa.MapElements.Add(znacznikStart);
 
-
                 if (DaneGeograficzne.pktDocelowy.Latitude != 0 && DaneGeograficzne.pktDocelowy.Longitude != 0)
                 {
                     var znacznikCel = new MapIcon
@@ -106,51 +106,114 @@ namespace mapy
                         StrokeThickness = 3,
                         StrokeDashed = true,
                         Path = new Geopath(new List<BasicGeoposition>
-                        {
-                            DaneGeograficzne.pktStartowy,
-                            DaneGeograficzne.pktDocelowy
-                        })
+                {
+                    DaneGeograficzne.pktStartowy,
+                    DaneGeograficzne.pktDocelowy
+                })
                     };
                     mojaMapa.MapElements.Add(trasaLotem);
+
+                    await Trasa();
                 }
 
                 await mojaMapa.TrySetViewAsync(new Geopoint(DaneGeograficzne.pktStartowy), 8);
-
             }
 
             base.OnNavigatedTo(e);
         }
 
-        private async void Trasa()
+        private async Task Trasa()
         {
-            var routeReq = new RouteRequest()
+            // Sprawdź czy są dostępne punkty startowy i docelowy
+            if (DaneGeograficzne.pktStartowy.Latitude == 0 || DaneGeograficzne.pktStartowy.Longitude == 0 ||
+                DaneGeograficzne.pktDocelowy.Latitude == 0 || DaneGeograficzne.pktDocelowy.Longitude == 0)
             {
-                BingMapsKey = DaneGeograficzne.BingKey,
-                Culture = "pl",
-                Waypoints = new List<SimpleWaypoint>
-                {
-                    new SimpleWaypoint(DaneGeograficzne.pktStartowy.Latitude, DaneGeograficzne.pktStartowy.Longitude),
-                    new SimpleWaypoint(DaneGeograficzne.pktDocelowy.Latitude, DaneGeograficzne.pktDocelowy.Longitude),
-                },
-                RouteOptions = new RouteOptions()
-                {
-                    RouteAttributes = new List<RouteAttributeType> { RouteAttributeType.RoutePath }
-                }
-            };
-            var response = await ServiceManager.GetResponseAsync(routeReq);
+                System.Diagnostics.Debug.WriteLine("Brak punktów startowego lub docelowego");
+                return;
+            }
 
-            if (response != null && response.ResourceSets != null && response.ResourceSets.Length > 0)
+            System.Diagnostics.Debug.WriteLine("Rozpoczynam wyznaczanie trasy...");
+
+            try
             {
-                var resource = response.ResourceSets[0].Resources[0];
-                var route = resource as Route;
-
-                double[][] path = null;
-                if (route != null && route.RoutePath != null && route.RoutePath.Line != null && route.RoutePath.Line.Coordinates != null)
+                // Utwórz zapytanie o trasę
+                var routeReq = new RouteRequest()
                 {
-                    path = route.RoutePath.Line.Coordinates;
-                }
+                    BingMapsKey = DaneGeograficzne.BingKey,
+                    Culture = "pl",
+                    Waypoints = new List<SimpleWaypoint>
+            {
+                new SimpleWaypoint(DaneGeograficzne.pktStartowy.Latitude, DaneGeograficzne.pktStartowy.Longitude),
+                new SimpleWaypoint(DaneGeograficzne.pktDocelowy.Latitude, DaneGeograficzne.pktDocelowy.Longitude),
+            },
+                    RouteOptions = new RouteOptions()
+                    {
+                        RouteAttributes = new List<RouteAttributeType> { RouteAttributeType.RoutePath }
+                    }
+                };
 
-                
+                // Wywołaj usługę wyznaczania trasy
+                var response = await ServiceManager.GetResponseAsync(routeReq);
+                System.Diagnostics.Debug.WriteLine($"Otrzymano odpowiedź: {response != null}");
+
+                // Sprawdź otrzymany wynik
+                if (response != null &&
+                    response.ResourceSets != null &&
+                    response.ResourceSets.Length > 0)
+                {
+                    // Rzutuj zasób na obiekt Route
+                    var resource = response.ResourceSets[0].Resources[0];
+                    var route = resource as Route;
+
+                    if (route != null)
+                    {
+                        // Pobierz informacje o trasie
+                        double dystansKm = route.TravelDistance; // dystans w kilometrach
+                        int czasPodrozyMin = (int)(route.TravelDuration / 60); // czas w minutach
+
+                        // Wyświetl komunikat z informacjami o trasie
+                        var dialog = new Windows.UI.Popups.MessageDialog(
+                            $"Dystans: {dystansKm:F2} km\n" +
+                            $"Przewidywany czas podróży: {czasPodrozyMin} min ({czasPodrozyMin / 60}h {czasPodrozyMin % 60}min)",
+                            "Informacje o trasie");
+                        await dialog.ShowAsync();
+
+                        if (route.RoutePath != null &&
+                            route.RoutePath.Line != null &&
+                            route.RoutePath.Line.Coordinates != null)
+                        {
+                            // Pobierz współrzędne trasy
+                            double[][] path = route.RoutePath.Line.Coordinates;
+                            System.Diagnostics.Debug.WriteLine($"Znaleziono {path.Length} punktów trasy");
+
+                            // Utwórz kolekcję punktów geograficznych z współrzędnych trasy
+                            var geoPath = from coordinate in path
+                                          select new BasicGeoposition
+                                          {
+                                              Latitude = coordinate[0],
+                                              Longitude = coordinate[1]
+                                          };
+
+                            // Zdefiniuj obiekt trasy (linia łamana na mapie)
+                            var trasa = new MapPolyline
+                            {
+                                Path = new Geopath(geoPath),
+                                StrokeColor = Windows.UI.Colors.Blue,
+                                StrokeThickness = 4
+                            };
+
+                            // Dodaj trasę do mapy
+                            mojaMapa.MapElements.Add(trasa);
+                            System.Diagnostics.Debug.WriteLine("Trasa dodana do mapy!");
+
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Obsługa błędów (opcjonalnie można wyświetlić komunikat)
+                System.Diagnostics.Debug.WriteLine($"Błąd wyznaczania trasy: {ex.Message}");
             }
         }
     }
